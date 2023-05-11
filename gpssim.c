@@ -2523,12 +2523,13 @@ int GPS_create_bin(char* param, char* base_path)
 					fprintf(stderr, "ERROR: Failed to open STOP file.\n");
 					// return 118;
 			} else {
-				// int stop_flag = fgetc(stop_fp);
-				// fprintf(stderr, "STOP FLAG:. %d\n", stop_flag);
-				if(fgetc(stop_fp) != -1) {
-					fclose(stop_fp);
+				char line[100];
+				fgets(line, 100, stop_fp);
+				fprintf(stderr, "\nStop file: %s\n", line);
+				if (strcmp(line, "stop") == 0) {
 					break;
 				}
+				fclose(stop_fp);
 			}  // end stop condition
 			// Split bin file into small size
 			filenum = iumd / 10;
