@@ -2521,15 +2521,16 @@ int GPS_create_bin(char* param, char* base_path)
 			sprintf(filepath,"%s%s", cwd,"stop.txt");
 			if (NULL == (stop_fp = fopen(filepath, "r"))){
 					fprintf(stderr, "ERROR: Failed to open STOP file.\n");
-					// return 118;
-			} else {
-				char line[100];
-				fgets(line, 100, stop_fp);
-				fprintf(stderr, "\nStop file: %s\n", line);
-				if (strcmp(line, "stop") == 0) {
-					break;
-				}
+					//return 200;
+			}
+			else {
+				// int stop_flag = fgetc(stop_fp);
+				// fprintf(stderr, "STOP FLAG:. %d\n", stop_flag);
+				//char line[100];
+				//fgets(line, 100, stop_fp);
+				fprintf(stderr, "\nStop file is exist\n");
 				fclose(stop_fp);
+				break;
 			}  // end stop condition
 			// Split bin file into small size
 			filenum = iumd / 10;
