@@ -2257,7 +2257,7 @@ int GPS_create_bin(char* param, char* base_path)
 		// debug test file content
 		// if (NULL==(fp=fopen(filepath,"wb")))
 		// end debug
-		if (NULL==(fp=fopen(filepath,"w")))
+		if (NULL==(fp=fopen(filepath,"wb")))
 		{
 			fprintf(stderr, "ERROR: Failed to open output file.\n");
 			return 118;
