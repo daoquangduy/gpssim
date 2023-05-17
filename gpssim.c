@@ -2515,7 +2515,7 @@ int GPS_create_bin(char* param, char* base_path)
 
 		// add seperate bin file
 
-		if( iumd % 10 == 0){ // 1s loop
+		if( iumd % 5 == 0){ // 1s loop
 
 			// add stop file, read content of stop file, if not NULL --> stop 
 			sprintf(filepath,"%s%s", cwd,"stop.txt");
