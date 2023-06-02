@@ -1357,10 +1357,11 @@ void computeCodePhase(channel_t *chan, range_t rho1, double dt)
  *  \param[[in] filename File name of the text input file
  *  \returns Number of user data motion records read, -1 on error
  */
-int readUserMotion(double xyz[USER_MOTION_SIZE][3], const char *filename)
+// long int readUserMotion(double xyz[USER_MOTION_SIZE][3], const char *filename)
+long int readUserMotion(double **xyz, const char *filename)
 {
 	FILE *fp;
-	int numd;
+	long int numd;
 	char str[MAX_CHAR];
 	double t,x,y,z;
 
@@ -1392,10 +1393,11 @@ int readUserMotion(double xyz[USER_MOTION_SIZE][3], const char *filename)
  *
  * Added by romalvarezllorens@gmail.com
  */
-int readUserMotionLLH(double xyz[USER_MOTION_SIZE][3], const char *filename)
+// int readUserMotionLLH(double xyz[USER_MOTION_SIZE][3], const char *filename)
+long int readUserMotionLLH(double **xyz, const char *filename)
 {
 	FILE *fp;
-	int numd;
+	long int numd;
 	double t,llh[3];
 	char str[MAX_CHAR];
 
@@ -1428,10 +1430,11 @@ int readUserMotionLLH(double xyz[USER_MOTION_SIZE][3], const char *filename)
 	return (numd);
 }
 
-int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char *filename)
+// int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char *filename)
+long int readNmeaGGA(double **xyz, const char *filename)
 {
 	FILE *fp;
-	int numd = 0;
+	long int numd = 0;
 	char str[MAX_CHAR];
 	char *token;
 	double llh[3],pos[3];
@@ -1747,10 +1750,16 @@ int GPS_create_bin(char* param, char* base_path)
 	double delt;
 	int isamp;
 
-	int iumd;
-	int numd;
+	long int iumd;
+	long int numd;
+	long int line;
 	char umfile[MAX_CHAR];
-	double xyz[USER_MOTION_SIZE][3];
+	// double xyz[USER_MOTION_SIZE][3];
+	double** xyz = NULL;
+	xyz = (double**)malloc(USER_MOTION_SIZE * sizeof(double));
+	for (line = 0; line < USER_MOTION_SIZE; line++) {
+		xyz[line] = (double *)malloc(3 * sizeof(double));
+	}
 
 	int staticLocationMode = FALSE;
 	int nmeaGGA = FALSE;
@@ -1815,24 +1824,6 @@ int GPS_create_bin(char* param, char* base_path)
 		token = strtok(NULL, " ");
 	}
 
-	// debug
-	// int iii;
-	// for (iii = 0; iii < nargc; iii++)
-	// {
-	// 	fprintf(stderr, "param no %d is: %s\n", iii, nargv[iii]);
-	// }
-	
-	// end debug
-
-	// get current folder 
-	
-	// if (getcwd(cwd, sizeof(cwd)) != NULL) {
-	// 		strcat(cwd, "\\");
-	// 		printf("Current working dir: %s\n", cwd);
-	// } else {
-	// 		perror("getcwd() error");
-	// 		return 200; // get current path error
-	// }
 	sprintf(cwd, "%s%s", base_path, "\\" );
 	// end add **************************************************
 
@@ -1851,8 +1842,6 @@ int GPS_create_bin(char* param, char* base_path)
 
 	if (nargc<3)
 	{
-		// usage();
-		// exit(1);
 		return 102;
 	}
 
@@ -2253,17 +2242,13 @@ int GPS_create_bin(char* param, char* base_path)
 
 	// if(strcmp("-", outfile)){
 	// 	if (NULL==(fp=fopen(outfile,"wb")))
-	if(strcmp("-", filepath)){
 		// debug test file content
 		// if (NULL==(fp=fopen(filepath,"wb")))
 		// end debug
-		if (NULL==(fp=fopen(filepath,"wb")))
-		{
-			fprintf(stderr, "ERROR: Failed to open output file.\n");
-			return 118;
-		}
-	}else{
-		fp = stdout;
+	if (NULL==(fp=fopen(filepath,"wb")))
+	{
+		fprintf(stderr, "ERROR: Failed to open output file.\n");
+		return 118;
 	}
 
 	////////////////////////////////////////////////////////////
@@ -2519,19 +2504,12 @@ int GPS_create_bin(char* param, char* base_path)
 
 			// add stop file, read content of stop file, if not NULL --> stop 
 			sprintf(filepath,"%s%s", cwd,"stop.txt");
-			if (NULL == (stop_fp = fopen(filepath, "r"))){
-					fprintf(stderr, "ERROR: Failed to open STOP file.\n");
-					//return 200;
-			}
-			else {
-				// int stop_flag = fgetc(stop_fp);
-				// fprintf(stderr, "STOP FLAG:. %d\n", stop_flag);
-				//char line[100];
-				//fgets(line, 100, stop_fp);
+			if ((stop_fp = fopen(filepath, "r")) != NULL){
 				fprintf(stderr, "\nStop file is exist\n");
 				fclose(stop_fp);
 				break;
-			}  // end stop condition
+			}
+
 			// Split bin file into small size
 			filenum = iumd / 10;
 			sprintf(filepath,"%s%s%d%s", cwd, outfile, filenum, ".bin");
@@ -2553,6 +2531,12 @@ int GPS_create_bin(char* param, char* base_path)
 
 	// Free I/Q buffer
 	free(iq_buff);
+
+	for (line = 0; line < USER_MOTION_SIZE; line++) {
+		free(xyz[line]);
+	}
+
+	free(xyz);
 
 	// Close file
 	fclose(fp);

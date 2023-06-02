@@ -8,6 +8,7 @@
 // }
 
 DLLIMPORT int GPS_create_bin(char* param, char* base_path);
+// DLLIMPORT gpstime_t incGpsTime(gpstime_t time, double dt);
 
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
