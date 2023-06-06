@@ -2502,20 +2502,37 @@ int GPS_create_bin(char* param, char* base_path)
 
 		if( iumd % 10 == 0){ // 1s loop
 
+			// close previous file
+			fclose(fp);
+
 			// add stop file, read content of stop file, if not NULL --> stop 
 			sprintf(filepath,"%s%s", cwd,"stop.txt");
+			//fprintf(stderr, "Stop file: %s\n", filepath);
 			if ((stop_fp = fopen(filepath, "r")) != NULL){
 				fprintf(stderr, "\nStop file is exist\n");
 				fclose(stop_fp);
 				break;
-			}
+			} else 
+			{
+				sprintf(filepath, "%s%s", cwd, "run.txt");
+				while ((stop_fp = fopen(filepath, "r")) == NULL) {
+					// waitting for run cmd come, doing nothing
+				}
+				fclose(stop_fp);
+				int del = remove(filepath);
+				if (del == 0) {
+					fprintf(stderr, "\nFile deleted successfully\n");
+				}
+				else {
+					fprintf(stderr, "\nError: unable to delete the file\n");
+				}
+			}  // end stop condition
 
 			// Split bin file into small size
 			filenum = iumd / 10;
 			sprintf(filepath,"%s%s%d%s", cwd, outfile, filenum, ".bin");
 			// fprintf(stderr, "\nFile no = %d, %s\n", filenum, filepath);
-			// close previous file
-			fclose(fp);
+			
 			if (NULL==(fp=fopen(filepath,"wb"))){
 					fprintf(stderr, "ERROR: Failed to open output file.\n");
 					return 118;
@@ -2548,15 +2565,3 @@ int GPS_create_bin(char* param, char* base_path)
 }
 
 
-// debug
-// int main(int argc, char const *argv[])
-// {
-
-// 	char* param = "-e brdc0010.22n -u circle.csv -d 10 -o binfilename";
-// 	char* base_path = "C:\\Users\\n-hos\\Desktop\\gps-sdr-sim-source\\Test alone dll";
-// 	// printf("%s\n", param);
-// 	int res = GPS_create_bin(param, base_path);
-// 	// res = GPS_create_bin(param);
-// 	return res;
-// }
-// end debug
