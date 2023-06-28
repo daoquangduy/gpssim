@@ -2514,18 +2514,18 @@ int GPS_create_bin(char* param, char* base_path)
 				break;
 			} else 
 			{
-				sprintf(filepath, "%s%s", cwd, "run.txt");
-				while ((stop_fp = fopen(filepath, "r")) == NULL) {
-					// waitting for run cmd come, doing nothing
-				}
-				fclose(stop_fp);
-				int del = remove(filepath);
-				if (del == 0) {
-					fprintf(stderr, "\nFile deleted successfully\n");
-				}
-				else {
-					fprintf(stderr, "\nError: unable to delete the file\n");
-				}
+//				sprintf(filepath, "%s%s", cwd, "run.txt");
+//				while ((stop_fp = fopen(filepath, "r")) == NULL) {
+//					// waitting for run cmd come, doing nothing
+//				}
+//				fclose(stop_fp);
+//				int del = remove(filepath);
+//				if (del == 0) {
+//					fprintf(stderr, "\nFile deleted successfully\n");
+//				}
+//				else {
+//					fprintf(stderr, "\nError: unable to delete the file\n");
+//				}
 			}  // end stop condition
 
 			// Split bin file into small size
