@@ -23,7 +23,7 @@
 
 /*! \brief Maximum number of user motion points */
 #ifndef USER_MOTION_SIZE
-#define USER_MOTION_SIZE (300000) // max duration at 10Hz
+#define USER_MOTION_SIZE (3000) // max duration at 10Hz
 #endif
 
 /*! \brief Maximum duration for static mode*/
@@ -189,6 +189,6 @@ typedef struct
 } channel_t;
 
 //  int GPS_create_bin(char* param);
-DLLIMPORT int GPS_create_bin(char* param, char* base_path);
+DLLIMPORT int GPS_create_bin(char* param, char* base_path, short * iq_buff);
 // DLLIMPORT gpstime_t incGpsTime(gpstime_t time, double dt);
 #endif

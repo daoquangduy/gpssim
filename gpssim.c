@@ -5,7 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include <unistd.h>
+#include "unistd.h"
 #ifdef _WIN32
 #include "getopt.h"
 #else
@@ -1357,16 +1357,16 @@ void computeCodePhase(channel_t *chan, range_t rho1, double dt)
  *  \param[[in] filename File name of the text input file
  *  \returns Number of user data motion records read, -1 on error
  */
-// long int readUserMotion(double xyz[USER_MOTION_SIZE][3], const char *filename)
-long int readUserMotion(double **xyz, const char *filename)
+//unsigned int readUserMotion(double xyz[USER_MOTION_SIZE][3], const char *filename)
+unsigned long int readUserMotion(double **xyz, const char* filename)
 {
 	FILE *fp;
-	long int numd;
+	unsigned long int numd;
 	char str[MAX_CHAR];
 	double t,x,y,z;
 
 	if (NULL==(fp=fopen(filename,"rt")))
-		return(-1);
+		return(0);
 
 	for (numd=0; numd<USER_MOTION_SIZE; numd++)
 	{
@@ -1393,16 +1393,16 @@ long int readUserMotion(double **xyz, const char *filename)
  *
  * Added by romalvarezllorens@gmail.com
  */
-// int readUserMotionLLH(double xyz[USER_MOTION_SIZE][3], const char *filename)
-long int readUserMotionLLH(double **xyz, const char *filename)
+//unsigned int readUserMotionLLH(double xyz[USER_MOTION_SIZE][3], const char *filename)
+unsigned int readUserMotionLLH(double **xyz, const char* filename)
 {
 	FILE *fp;
-	long int numd;
+	unsigned int numd;
 	double t,llh[3];
 	char str[MAX_CHAR];
 
 	if (NULL==(fp=fopen(filename,"rt")))
-		return(-1);
+		return(0);
 
 	for (numd=0; numd<USER_MOTION_SIZE; numd++)
 	{
@@ -1430,18 +1430,18 @@ long int readUserMotionLLH(double **xyz, const char *filename)
 	return (numd);
 }
 
-// int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char *filename)
-long int readNmeaGGA(double **xyz, const char *filename)
+//unsigned int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char *filename)
+unsigned int readNmeaGGA(double **xyz, const char* filename)
 {
 	FILE *fp;
-	long int numd = 0;
+	unsigned int numd = 0;
 	char str[MAX_CHAR];
 	char *token;
 	double llh[3],pos[3];
 	char tmp[8];
 
 	if (NULL==(fp=fopen(filename,"rt")))
-		return(-1);
+		return(0);
 
 	while (1)
 	{
@@ -1718,17 +1718,20 @@ int allocateChannel(channel_t *chan, ephem_t *eph, ionoutc_t ionoutc, gpstime_t 
 // 	return;
 // }
 
-int GPS_create_bin(char* param, char* base_path)
+int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 {
 	// debug 
 	// print param
+
+
 	fprintf(stderr, "Param: %s\n", param);
+	fprintf(stderr, "Base Path: %s\n", base_path);
 	// 
 	clock_t tstart,tend;
 
-	FILE *fp;
+	//FILE *fp;
 	// add stop file
-	FILE *stop_fp;
+	//FILE *stop_fp;
 
 	int sv;
 	int neph,ieph;
@@ -1743,20 +1746,22 @@ int GPS_create_bin(char* param, char* base_path)
 
 	int ip,qp;
 	int iTable;
-	short *iq_buff = NULL;
+	//short *iq_buff = NULL;
+	//static short iq_buff[200000];
 	signed char *iq8_buff = NULL;
 
 	gpstime_t grx;
 	double delt;
 	int isamp;
 
-	long int iumd;
-	long int numd;
-	long int line;
+	unsigned long int iumd;
+	unsigned long int numd;
 	char umfile[MAX_CHAR];
-	// double xyz[USER_MOTION_SIZE][3];
+
 	double** xyz = NULL;
 	xyz = (double**)malloc(USER_MOTION_SIZE * sizeof(double));
+
+	int line;
 	for (line = 0; line < USER_MOTION_SIZE; line++) {
 		xyz[line] = (double *)malloc(3 * sizeof(double));
 	}
@@ -1786,7 +1791,7 @@ int GPS_create_bin(char* param, char* base_path)
 	int igrx;
 
 	double duration;
-	int iduration;
+	unsigned int iduration;
 	int verb;
 
 	int timeoverwrite = FALSE; // Overwrite the TOC and TOE in the RINEX file
@@ -1824,7 +1829,27 @@ int GPS_create_bin(char* param, char* base_path)
 		token = strtok(NULL, " ");
 	}
 
-	sprintf(cwd, "%s%s", base_path, "\\" );
+	// debug
+	// int iii;
+	// for (iii = 0; iii < nargc; iii++)
+	// {
+	// 	fprintf(stderr, "param no %d is: %s\n", iii, nargv[iii]);
+	// }
+	
+	// end debug
+
+	// get current folder 
+	
+	// if (getcwd(cwd, sizeof(cwd)) != NULL) {
+	// 		strcat(cwd, "\\");
+	// 		printf("Current working dir: %s\n", cwd);
+	// } else {
+	// 		perror("getcwd() error");
+	// 		return 200; // get current path error
+	// }
+	//sprintf(cwd, "%s%s", base_path, "\\" );
+	strcpy(cwd, base_path);
+	strcat(cwd, "\\");
 	// end add **************************************************
 
 	// Default options
@@ -1842,6 +1867,8 @@ int GPS_create_bin(char* param, char* base_path)
 
 	if (nargc<3)
 	{
+		// usage();
+		// exit(1);
 		return 102;
 	}
 
@@ -1976,7 +2003,7 @@ int GPS_create_bin(char* param, char* base_path)
 		fprintf(stderr, "ERROR: Invalid duration.\n");
 		return 108;
 	}
-	iduration = (int)(duration*10.0 + 0.5);
+	iduration = (unsigned int)(duration*10.0 + 0.5);
 
 	// Buffer size	
 	samp_freq = floor(samp_freq/10.0);
@@ -2009,12 +2036,13 @@ int GPS_create_bin(char* param, char* base_path)
 			// numd = readUserMotion(xyz, umfile);
 			numd = readUserMotion(xyz, filepath);
 
-		if (numd==-1)
-		{
-			fprintf(stderr, "ERROR: Failed to open user motion / NMEA GGA file.\n");
-			return 109;
-		}
-		else if (numd==0)
+		//if (numd==-1)
+		//{
+		//	fprintf(stderr, "ERROR: Failed to open user motion / NMEA GGA file.\n");
+		//	return 109;
+		//}
+		//else if (numd==0)
+		if (numd == 0)
 		{
 			fprintf(stderr, "ERROR: Failed to read user motion / NMEA GGA data.\n");
 			return 110;
@@ -2204,13 +2232,13 @@ int GPS_create_bin(char* param, char* base_path)
 	////////////////////////////////////////////////////////////
 
 	// Allocate I/Q buffer
-	iq_buff = calloc(2*iq_buff_size, 2);
+	//iq_buff = calloc(2*iq_buff_size, 2);
 
-	if (iq_buff==NULL)
-	{
-		fprintf(stderr, "ERROR: Failed to allocate 16-bit I/Q buffer.\n");
-		return 115;
-	}
+	//if (iq_buff==NULL)
+	//{
+	//	fprintf(stderr, "ERROR: Failed to allocate 16-bit I/Q buffer.\n");
+	//	return 115;
+	//}
 
 	if (data_format==SC08)
 	{
@@ -2230,7 +2258,7 @@ int GPS_create_bin(char* param, char* base_path)
 			return 117;
 		}
 	}
-
+	/*
 	// Open output file
 	// "-" can be used as name for stdout
 	// debug
@@ -2242,15 +2270,20 @@ int GPS_create_bin(char* param, char* base_path)
 
 	// if(strcmp("-", outfile)){
 	// 	if (NULL==(fp=fopen(outfile,"wb")))
+	if(strcmp("-", filepath)){
 		// debug test file content
 		// if (NULL==(fp=fopen(filepath,"wb")))
 		// end debug
-	if (NULL==(fp=fopen(filepath,"wb")))
-	{
-		fprintf(stderr, "ERROR: Failed to open output file.\n");
-		return 118;
+		if (NULL==(fp=fopen(filepath,"w")))
+		{
+			fprintf(stderr, "ERROR: Failed to open output file.\n");
+			return 118;
+		}
+	}else{
+		fp = stdout;
 	}
 
+	*/
 	////////////////////////////////////////////////////////////
 	// Initialize channels
 	////////////////////////////////////////////////////////////
@@ -2417,21 +2450,21 @@ int GPS_create_bin(char* param, char* base_path)
 				iq8_buff[isamp/8] |= (iq_buff[isamp]>0?0x01:0x00)<<(7-isamp%8);
 			}
 
-			fwrite(iq8_buff, 1, iq_buff_size/4, fp);
+			//fwrite(iq8_buff, 1, iq_buff_size/4, fp);
 		}
 		else if (data_format==SC08)
 		{
 			for (isamp=0; isamp<2*iq_buff_size; isamp++)
 				iq8_buff[isamp] = iq_buff[isamp]>>4; // 12-bit bladeRF -> 8-bit HackRF
 
-			fwrite(iq8_buff, 1, 2*iq_buff_size, fp);
+			//fwrite(iq8_buff, 1, 2*iq_buff_size, fp);
 		} 
 		else // data_format==SC16
 		{
 			// debug
 			// fprintf(stderr, "IQ buffer: %d\n", iq_buff);
 			// end debug
-			fwrite(iq_buff, 2, 2*iq_buff_size, fp);
+			//fwrite(iq_buff, 2, 2*iq_buff_size, fp);
 		}
 
 		//
@@ -2497,7 +2530,7 @@ int GPS_create_bin(char* param, char* base_path)
 		// Update time counter
 		fprintf(stderr, "\rTime into run = %4.1f", subGpsTime(grx, g0));
 		fflush(stdout);
-
+/*
 		// add seperate bin file
 
 		if( iumd % 10 == 0){ // 1s loop
@@ -2514,25 +2547,25 @@ int GPS_create_bin(char* param, char* base_path)
 				break;
 			} else 
 			{
-//				sprintf(filepath, "%s%s", cwd, "run.txt");
-//				while ((stop_fp = fopen(filepath, "r")) == NULL) {
-//					// waitting for run cmd come, doing nothing
-//				}
-//				fclose(stop_fp);
-//				int del = remove(filepath);
-//				if (del == 0) {
-//					fprintf(stderr, "\nFile deleted successfully\n");
-//				}
-//				else {
-//					fprintf(stderr, "\nError: unable to delete the file\n");
-//				}
+				sprintf(filepath, "%s%s", cwd, "run.txt");
+				while ((stop_fp = fopen(filepath, "r")) == NULL) {
+					
+				}
+				fclose(stop_fp);
+				int del = remove(filepath);
+				if (del == 0) {
+					fprintf(stderr, "\nFile deleted successfully\n");
+				}
+				else {
+					fprintf(stderr, "\nError: unable to delete the file\n");
+				}
 			}  // end stop condition
 
 			// Split bin file into small size
 			filenum = iumd / 10;
 			sprintf(filepath,"%s%s%d%s", cwd, outfile, filenum, ".bin");
-			// fprintf(stderr, "\nFile no = %d, %s\n", filenum, filepath);
-			
+			fprintf(stderr, "\nFile no = %d, %s\n", filenum, filepath);
+
 			if (NULL==(fp=fopen(filepath,"wb"))){
 					fprintf(stderr, "ERROR: Failed to open output file.\n");
 					return 118;
@@ -2540,6 +2573,8 @@ int GPS_create_bin(char* param, char* base_path)
 
 		}  // end 1s loop
 		// end add
+*/
+		break;
 	}  // end for loop caculate iq_buff and write stream (fp)
 
 	tend = clock();
@@ -2547,7 +2582,7 @@ int GPS_create_bin(char* param, char* base_path)
 	fprintf(stderr, "\nDone!\n");
 
 	// Free I/Q buffer
-	free(iq_buff);
+	//free(iq_buff);
 
 	for (line = 0; line < USER_MOTION_SIZE; line++) {
 		free(xyz[line]);
@@ -2556,11 +2591,12 @@ int GPS_create_bin(char* param, char* base_path)
 	free(xyz);
 
 	// Close file
-	fclose(fp);
+	//fclose(fp);
 
 	// Process time
 	fprintf(stderr, "Process time = %.1f [sec]\n\n\n", (double)(tend-tstart)/CLOCKS_PER_SEC);
 
+	//return iq_buff;
 	return(0);
 }
 
