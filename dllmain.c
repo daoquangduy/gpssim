@@ -7,7 +7,7 @@
 // 	MessageBox(0,"Hello World from DLL!\n","Hi",MB_ICONINFORMATION);
 // }
 
-DLLIMPORT int GPS_create_bin(char* param, char* base_path);
+DLLIMPORT int GPS_create_bin(char* param, char* base_path, short * iq_buff);
 // DLLIMPORT gpstime_t incGpsTime(gpstime_t time, double dt);
 
 

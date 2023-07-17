@@ -1729,9 +1729,9 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 	// 
 	clock_t tstart,tend;
 
-	FILE *fp;
+	//FILE *fp;
 	// add stop file
-	FILE *stop_fp;
+	//FILE *stop_fp;
 
 	int sv;
 	int neph,ieph;
@@ -1766,7 +1766,6 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 		xyz[line] = (double *)malloc(3 * sizeof(double));
 	}
 
-	int realTimeMode = FALSE;
 	int staticLocationMode = FALSE;
 	int nmeaGGA = FALSE;
 	int umLLH = FALSE;
@@ -1877,7 +1876,7 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 	reset_getopt();
 	// end debug
 	// while ((result=getopt(argc,argv,"e:u:x:g:c:l:o:s:b:T:t:d:iv"))!=-1)
-	while ((result=getopt(nargc,nargv,"e:u:x:g:c:l:o:s:b:T:t:d:ivr"))!=-1)
+	while ((result=getopt(nargc,nargv,"e:u:x:g:c:l:o:s:b:T:t:d:iv"))!=-1)
 	{
 		// debug
 		printf("char from getopt: %c\n", result);
@@ -1974,9 +1973,6 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 			break;
 		case 'v':
 			verb = TRUE;
-			break;
-		case 'r':
-			realTimeMode = TRUE;
 			break;
 		case ':':
 		case '?':
@@ -2262,19 +2258,19 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 			return 117;
 		}
 	}
-
+	/*
 	// Open output file
 	// "-" can be used as name for stdout
 	// debug
 	strcpy(filepath, cwd);
 	// strcat(filepath, outfile);
-	sprintf(filepath, "%s%s%s", cwd, outfile,".bin");
+	sprintf(filepath, "%s%s%s", cwd, outfile,"0.bin");
 	fprintf(stderr, "outfile: %s\n", filepath);
 	// end debug
 
 	// if(strcmp("-", outfile)){
 	// 	if (NULL==(fp=fopen(outfile,"wb")))
-	if(!realTimeMode){
+	if(strcmp("-", filepath)){
 		// debug test file content
 		// if (NULL==(fp=fopen(filepath,"wb")))
 		// end debug
@@ -2283,8 +2279,11 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 			fprintf(stderr, "ERROR: Failed to open output file.\n");
 			return 118;
 		}
+	}else{
+		fp = stdout;
 	}
 
+	*/
 	////////////////////////////////////////////////////////////
 	// Initialize channels
 	////////////////////////////////////////////////////////////
@@ -2324,7 +2323,7 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 	tstart = clock();
 
 	// Update receiver time
-	//grx = incGpsTime(grx, 0.1);
+	grx = incGpsTime(grx, 0.1);
 
 	// for loop caculate iq_buff and write to stream file
 	for (iumd=1; iumd<numd; iumd++)
@@ -2451,25 +2450,21 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 				iq8_buff[isamp/8] |= (iq_buff[isamp]>0?0x01:0x00)<<(7-isamp%8);
 			}
 
-//			fwrite(iq8_buff, 1, iq_buff_size/4, fp);
+			//fwrite(iq8_buff, 1, iq_buff_size/4, fp);
 		}
 		else if (data_format==SC08)
 		{
 			for (isamp=0; isamp<2*iq_buff_size; isamp++)
 				iq8_buff[isamp] = iq_buff[isamp]>>4; // 12-bit bladeRF -> 8-bit HackRF
 
-			if (!realTimeMode){
-				fwrite(iq8_buff, 1, 2*iq_buff_size, fp);
-			}
+			//fwrite(iq8_buff, 1, 2*iq_buff_size, fp);
 		} 
 		else // data_format==SC16
 		{
 			// debug
 			// fprintf(stderr, "IQ buffer: %d\n", iq_buff);
 			// end debug
-			if (!realTimeMode){
-				fwrite(iq_buff, 2, 2*iq_buff_size, fp);
-			}			
+			//fwrite(iq_buff, 2, 2*iq_buff_size, fp);
 		}
 
 		//
@@ -2579,16 +2574,7 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 		}  // end 1s loop
 		// end add
 */
-		if (realTimeMode == TRUE) break;
-
-		sprintf(filepath, "%s%s", cwd, "stop.txt");
-		//fprintf(stderr, "Stop file: %s\n", filepath);
-		if ((stop_fp = fopen(filepath, "r")) != NULL) {
-			fprintf(stderr, "\nStop file is exist\n");
-			fclose(stop_fp);
-			break;
-		}
-		//break;
+		break;
 	}  // end for loop caculate iq_buff and write stream (fp)
 
 	tend = clock();
@@ -2605,10 +2591,7 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 	free(xyz);
 
 	// Close file
-	if(!realTimeMode){
-		fclose(fp);	
-	}
-
+	//fclose(fp);
 
 	// Process time
 	fprintf(stderr, "Process time = %.1f [sec]\n\n\n", (double)(tend-tstart)/CLOCKS_PER_SEC);
@@ -2616,6 +2599,5 @@ int GPS_create_bin(char* param, char* base_path, short * iq_buff)
 	//return iq_buff;
 	return(0);
 }
-
 
 
