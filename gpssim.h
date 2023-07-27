@@ -190,5 +190,8 @@ typedef struct
 
 //  int GPS_create_bin(char* param);
 DLLIMPORT int GPS_create_bin(char* param, char* base_path, short * iq_buff);
+DLLIMPORT void llh2xyz(const double* llh, double* xyz);
+DLLIMPORT void xyz2llh(const double* xyz, double* llh);
+
 // DLLIMPORT gpstime_t incGpsTime(gpstime_t time, double dt);
 #endif
