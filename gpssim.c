@@ -1357,8 +1357,8 @@ void computeCodePhase(channel_t* chan, range_t rho1, double dt)
  *  \param[[in] filename File name of the text input file
  *  \returns Number of user data motion records read, -1 on error
  */
- //unsigned int readUserMotion(double xyz[USER_MOTION_SIZE][3], const char *filename)
-unsigned long int readUserMotion(double** xyz, const char* filename)
+ unsigned int readUserMotion(double xyz[USER_MOTION_SIZE][3], const char *filename)
+//unsigned long int readUserMotion(double** xyz, const char* filename)
 {
 	FILE* fp;
 	unsigned long int numd;
@@ -1393,8 +1393,8 @@ unsigned long int readUserMotion(double** xyz, const char* filename)
  *
  * Added by romalvarezllorens@gmail.com
  */
- //unsigned int readUserMotionLLH(double xyz[USER_MOTION_SIZE][3], const char *filename)
-unsigned int readUserMotionLLH(double** xyz, const char* filename)
+ unsigned int readUserMotionLLH(double xyz[USER_MOTION_SIZE][3], const char *filename)
+//unsigned int readUserMotionLLH(double** xyz, const char* filename)
 {
 	FILE* fp;
 	unsigned int numd;
@@ -1430,18 +1430,18 @@ unsigned int readUserMotionLLH(double** xyz, const char* filename)
 	return (numd);
 }
 
-//unsigned int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char *filename)
-unsigned int readNmeaGGA(double** xyz, const char* filename)
+int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char *filename)
+//int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char* filename)
 {
 	FILE* fp;
-	unsigned int numd = 0;
+	int numd = 0;
 	char str[MAX_CHAR];
 	char* token;
 	double llh[3], pos[3];
 	char tmp[8];
 
 	if (NULL == (fp = fopen(filename, "rt")))
-		return(0);
+		return(-1);
 
 	while (1)
 	{
@@ -1511,6 +1511,7 @@ unsigned int readNmeaGGA(double** xyz, const char* filename)
 
 	return (numd);
 }
+
 
 int generateNavMsg(gpstime_t g, channel_t* chan, int init)
 {
@@ -1718,20 +1719,27 @@ int allocateChannel(channel_t* chan, ephem_t* eph, ionoutc_t ionoutc, gpstime_t 
 // 	return;
 // }
 
-int GPS_create_bin(char* param, char* base_path, short* iq_buff)
+int GPS_create_bin(char* param, char* base_path, short* iq_buff_response)
 {
 	// debug 
 	// print param
+	int DEBUG = FALSE;
 
+	// #230816 test buffer
+	//int buff_len = sizeof(iq_buff) / sizeof(short);
+	//fprintf(stderr, "Buffer length: %d\n", buff_len);
 
-	fprintf(stderr, "Param: %s\n", param);
-	fprintf(stderr, "Base Path: %s\n", base_path);
+	if (DEBUG) {
+		fprintf(stderr, "Param: %s\n", param);
+		fprintf(stderr, "Base Path: %s\n", base_path);
+	}
 	// 
 	clock_t tstart, tend;
 
-	FILE* fp;
+	// #230816 remove generate binary
+	//FILE* fp;
 	// add stop file
-	FILE* stop_fp;
+	//FILE* stop_fp;
 
 	int sv;
 	int neph, ieph;
@@ -1748,7 +1756,7 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 	int iTable;
 	//short* iq_buff_bin = NULL;
 	//static short iq_buff[200000];
-	signed char* iq8_buff = NULL;
+	//signed char* iq8_buff = NULL;
 
 	gpstime_t grx;
 	double delt;
@@ -1758,13 +1766,14 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 	unsigned long int numd;
 	char umfile[MAX_CHAR];
 
-	double** xyz = NULL;
-	xyz = (double**)malloc(USER_MOTION_SIZE * sizeof(double));
+	//double** xyz = NULL;
+	//xyz = (double**)malloc(USER_MOTION_SIZE * sizeof(double));
 
-	int line;
-	for (line = 0; line < USER_MOTION_SIZE; line++) {
-		xyz[line] = (double*)malloc(3 * sizeof(double));
-	}
+	//int line;
+	//for (line = 0; line < USER_MOTION_SIZE; line++) {
+	//	xyz[line] = (double*)malloc(3 * sizeof(double));
+	//}
+	double xyz[1][3];
 
 	int realTimeMode = FALSE;
 	int staticLocationMode = FALSE;
@@ -1880,7 +1889,7 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 	while ((result = getopt(nargc, nargv, "e:u:x:g:c:l:o:s:b:T:t:d:ivr")) != -1)
 	{
 		// debug
-		printf("char from getopt: %c\n", result);
+		if(DEBUG) printf("char from getopt: %c\n", result);
 		// end debug
 		switch (result)
 		{
@@ -1989,6 +1998,12 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 		}
 	}
 
+	// #230816 only static coordinate is used
+	if (!staticLocationMode) {
+		fprintf(stderr, "ERROR: Only static mode is used.\n");
+		return 222;
+	}
+
 	if (navfile[0] == 0)
 	{
 		fprintf(stderr, "ERROR: GPS ephemeris file is not specified.\n");
@@ -2029,7 +2044,7 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 
 		strcpy(filepath, cwd);
 		strcat(filepath, umfile);
-		fprintf(stderr, "umfile: %s\n", filepath);
+		if(DEBUG) fprintf(stderr, "umfile: %s\n", filepath);
 		// end debug
 		// Read user motion file
 		if (nmeaGGA == TRUE)
@@ -2065,7 +2080,7 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 	{
 		// Static geodetic coordinates input mode: "-l"
 		// Added by scateu@gmail.com 
-		fprintf(stderr, "Using static location mode.\n");
+		if(DEBUG) fprintf(stderr, "Using static location mode.\n");
 
 		// Set simulation duration
 		numd = iduration;
@@ -2073,9 +2088,10 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 		// Set user initial position
 		llh2xyz(llh, xyz[0]);
 	}
-
-	fprintf(stderr, "xyz = %11.1f, %11.1f, %11.1f\n", xyz[0][0], xyz[0][1], xyz[0][2]);
-	fprintf(stderr, "llh = %11.6f, %11.6f, %11.1f\n", llh[0] * R2D, llh[1] * R2D, llh[2]);
+	if (DEBUG) {
+		fprintf(stderr, "xyz = %11.1f, %11.1f, %11.1f\n", xyz[0][0], xyz[0][1], xyz[0][2]);
+		fprintf(stderr, "llh = %11.6f, %11.6f, %11.1f\n", llh[0] * R2D, llh[1] * R2D, llh[2]);
+	}
 
 	////////////////////////////////////////////////////////////
 	// Read ephemeris
@@ -2202,9 +2218,11 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 		t0 = tmin;
 	}
 
-	fprintf(stderr, "Start time = %4d/%02d/%02d,%02d:%02d:%02.1f (%d:%.0f)\n",
-		t0.y, t0.m, t0.d, t0.hh, t0.mm, t0.sec, g0.week, g0.sec);
-	fprintf(stderr, "Duration = %.1f [sec]\n", ((double)numd) / 10.0);
+	if (DEBUG) {
+		fprintf(stderr, "Start time = %4d/%02d/%02d,%02d:%02d:%02.1f (%d:%.0f)\n",
+			t0.y, t0.m, t0.d, t0.hh, t0.mm, t0.sec, g0.week, g0.sec);
+		fprintf(stderr, "Duration = %.1f [sec]\n", ((double)numd) / 10.0);
+	}
 
 	// Select the current set of ephemerides
 	ieph = -1;
@@ -2237,6 +2255,7 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 	////////////////////////////////////////////////////////////
 	// Baseband signal buffer and output file
 	////////////////////////////////////////////////////////////
+	// 
 
 	// Allocate I/Q buffer
 	//iq_buff = calloc(2*iq_buff_size, 2);
@@ -2245,42 +2264,44 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 	//	fprintf(stderr, "ERROR: Failed to allocate 16-bit I/Q buffer.\n");
 	//	return 115;
 	//}
+	//fprintf(stderr, "0.1s Buffer size: %d\n", sizeof(iq_buff));
 
-	if (data_format == SC08)
-	{
-		iq8_buff = calloc(2 * iq_buff_size, 1);
-		if (iq8_buff == NULL)
-		{
-			fprintf(stderr, "ERROR: Failed to allocate 8-bit I/Q buffer.\n");
-			return 116;
-		}
-	}
-	else if (data_format == SC01)
-	{
-		iq8_buff = calloc(iq_buff_size / 4, 1); // byte = {I0, Q0, I1, Q1, I2, Q2, I3, Q3}
-		if (iq8_buff == NULL)
-		{
-			fprintf(stderr, "ERROR: Failed to allocate compressed 1-bit I/Q buffer.\n");
-			return 117;
-		}
-	}
+	//if (data_format == SC08)
+	//{
+	//	iq8_buff = calloc(2 * iq_buff_size, 1);
+	//	if (iq8_buff == NULL)
+	//	{
+	//		fprintf(stderr, "ERROR: Failed to allocate 8-bit I/Q buffer.\n");
+	//		return 116;
+	//	}
+	//}
+	//else if (data_format == SC01)
+	//{
+	//	iq8_buff = calloc(iq_buff_size / 4, 1); // byte = {I0, Q0, I1, Q1, I2, Q2, I3, Q3}
+	//	if (iq8_buff == NULL)
+	//	{
+	//		fprintf(stderr, "ERROR: Failed to allocate compressed 1-bit I/Q buffer.\n");
+	//		return 117;
+	//	}
+	//}
 
+	// #230816 remove generate binary file
 	// Open output file
 	//strcpy(filepath, cwd);
 	//// strcat(filepath, outfile);
 	//sprintf(filepath, "%s%s%s", cwd, outfile, ".bin");
 	//fprintf(stderr, "outfile: %s\n", filepath);
-	if (!realTimeMode) {
+	//if (!realTimeMode) {
 		// debug test file content
 		// if (NULL==(fp=fopen(filepath,"wb")))
 		// end debug
-		sprintf(filepath, "%s%s%s", cwd, outfile, ".bin");
-		if (NULL == (fp = fopen(filepath, "wb")))
-		{
-			fprintf(stderr, "ERROR: Failed to open output file.\n");
-			return 118;
-		}
-	}
+		//sprintf(filepath, "%s%s%s", cwd, outfile, ".bin");
+		//if (NULL == (fp = fopen(filepath, "wb")))
+		//{
+		//	fprintf(stderr, "ERROR: Failed to open output file.\n");
+		//	return 118;
+		//}
+	//}
 
 	//}
 	////////////////////////////////////////////////////////////
@@ -2300,12 +2321,13 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 
 	// Allocate visible satellites
 	allocateChannel(chan, eph[ieph], ionoutc, grx, xyz[0], elvmask);
-
-	for (i = 0; i < MAX_CHAN; i++)
-	{
-		if (chan[i].prn > 0)
-			fprintf(stderr, "%02d %6.1f %5.1f %11.1f %5.1f\n", chan[i].prn,
-				chan[i].azel[0] * R2D, chan[i].azel[1] * R2D, chan[i].rho0.d, chan[i].rho0.iono_delay);
+	if (DEBUG) {
+		for (i = 0; i < MAX_CHAN; i++)
+		{
+			if (chan[i].prn > 0)
+				fprintf(stderr, "%02d %6.1f %5.1f %11.1f %5.1f\n", chan[i].prn,
+					chan[i].azel[0] * R2D, chan[i].azel[1] * R2D, chan[i].rho0.d, chan[i].rho0.iono_delay);
+		}
 	}
 
 	////////////////////////////////////////////////////////////
@@ -2324,7 +2346,11 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 	// Update receiver time
 	grx = incGpsTime(grx, 0.1);
 
+	// modify: -d 0.1 -> loop one time
+	numd = numd + 1;
+
 	// for loop caculate iq_buff and write to stream file
+
 	for (iumd = 1; iumd < numd; iumd++)
 	{
 		for (i = 0; i < MAX_CHAN; i++)
@@ -2433,42 +2459,53 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 			q_acc = (q_acc + 64) >> 7;
 
 			// Store I/Q samples into buffer
-			iq_buff[isamp * 2] = (short)i_acc;
-			iq_buff[isamp * 2 + 1] = (short)q_acc;
+			//iq_buff[isamp * 2] = (short)i_acc;
+			//iq_buff[isamp * 2 + 1] = (short)q_acc;
+			// #230816 Store I/Q Samples into PC buffer
+			int i_index = (iumd - 1) * (2 * iq_buff_size) + (isamp * 2);
+			int q_index = (iumd - 1) * (2 * iq_buff_size) + (isamp * 2) + 1;
+			iq_buff_response[i_index] = (short)i_acc;
+			iq_buff_response[q_index] = (short)q_acc;
 		}
+
+		// #230816 test iq_buffer
+		//int iq_data_size = 2 * iq_buff_size;
+		//memcpy(iq_buff_response, iq_buff, iq_data_size);
+		//fprintf(stderr, "total iq_buffer : %d\n", iq_buff[199950]);
 
 		if (realTimeMode == TRUE) break;
 
 		// write to bin file ***********************
 
-		if (data_format == SC01)
-		{
-			for (isamp = 0; isamp < 2 * iq_buff_size; isamp++)
-			{
-				if (isamp % 8 == 0)
-					iq8_buff[isamp / 8] = 0x00;
+		//if (data_format == SC01)
+		//{
+		//	for (isamp = 0; isamp < 2 * iq_buff_size; isamp++)
+		//	{
+		//		if (isamp % 8 == 0)
+		//			iq8_buff[isamp / 8] = 0x00;
 
-				iq8_buff[isamp / 8] |= (iq_buff[isamp] > 0 ? 0x01 : 0x00) << (7 - isamp % 8);
-			}
-			//			fwrite(iq8_buff, 1, iq_buff_size/4, fp);
-		}
-		else if (data_format == SC08)
-		{
-			for (isamp = 0; isamp < 2 * iq_buff_size; isamp++)
-				iq8_buff[isamp] = iq_buff[isamp] >> 4; // 12-bit bladeRF -> 8-bit HackRF
+		//		iq8_buff[isamp / 8] |= (iq_buff[isamp] > 0 ? 0x01 : 0x00) << (7 - isamp % 8);
+		//	}
+		//	//			fwrite(iq8_buff, 1, iq_buff_size/4, fp);
+		//}
+		//else if (data_format == SC08)
+		//{
+		//	for (isamp = 0; isamp < 2 * iq_buff_size; isamp++)
+		//		iq8_buff[isamp] = iq_buff[isamp] >> 4; // 12-bit bladeRF -> 8-bit HackRF
 
-			if (!realTimeMode) {
-				//fwrite(iq8_buff, 1, 2 * iq_buff_size, fp);
-			}
-		}
-		else // data_format==SC16
-		{
-			if (!realTimeMode) {
-				fwrite(iq_buff, 2, 2 * iq_buff_size, fp);
-				//for (isamp = 0; isamp < 2 * iq_buff_size; isamp++)
-				//fprintf(fp, "%d\n", iq_buff_bin[isamp]);
-			}
-		}
+		//	if (!realTimeMode) {
+		//		//fwrite(iq8_buff, 1, 2 * iq_buff_size, fp);
+		//	}
+		//}
+		//else // data_format==SC16
+		//{
+		//	// #230816 remove generate binary file
+		//	//if (!realTimeMode) {
+		//	//	fwrite(iq_buff, 2, 2 * iq_buff_size, fp);
+		//	//	//for (isamp = 0; isamp < 2 * iq_buff_size; isamp++)
+		//	//	//fprintf(fp, "%d\n", iq_buff_bin[isamp]);
+		//	//}
+		//}
 		
 		//
 		// Update navigation message and channel allocation every 30 seconds
@@ -2532,7 +2569,8 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 		grx = incGpsTime(grx, 0.1);
 
 		// Update time counter
-		fprintf(stderr, "\rTime into run = %4.1f", subGpsTime(grx, g0));
+		//fprintf(stderr, "\rTime into run = %4.1f\n", subGpsTime(grx, g0));
+		//fprintf(stderr, "Run time: %d\n", iumd);
 		fflush(stdout);
 		/*
 				// add seperate bin file
@@ -2579,40 +2617,42 @@ int GPS_create_bin(char* param, char* base_path, short* iq_buff)
 				// end add
 		*/
 		
+		// #230816 remove stop file
 
-		sprintf(filepath, "%s%s", cwd, "stop.txt");
-		//fprintf(stderr, "Stop file: %s\n", filepath);
-		if ((stop_fp = fopen(filepath, "r")) != NULL) {
-			fprintf(stderr, "\nStop file is exist\n");
-			fclose(stop_fp);
-			break;
-		}
+		//sprintf(filepath, "%s%s", cwd, "stop.txt");
+		////fprintf(stderr, "Stop file: %s\n", filepath);
+		//if ((stop_fp = fopen(filepath, "r")) != NULL) {
+		//	if(DEBUG) fprintf(stderr, "\nStop file is exist\n");
+		//	fclose(stop_fp);
+		//	break;
+		//}
 		//break;
 	}  // end for loop caculate iq_buff and write stream (fp)
 
 	tend = clock();
 
-	fprintf(stderr, "\nDone!\n");
+	if(DEBUG) fprintf(stderr, "\nDone!\n");
 
 	// Free I/Q buffer	//if (!realTimeMode) {
 	//	free(iq_buff_bin);
 	//}
 
 
-	for (line = 0; line < USER_MOTION_SIZE; line++) {
-		free(xyz[line]);
-	}
+	//for (line = 0; line < USER_MOTION_SIZE; line++) {
+	//	free(xyz[line]);
+	//}
 
-	free(xyz);
+	//free(xyz);
 
+	// #230816 remove generate binary file
 	// Close file
-	if (!realTimeMode) {
-		fclose(fp);
-	}
+	//if (!realTimeMode) {
+	//	fclose(fp);
+	//}
 
 
 	// Process time
-	fprintf(stderr, "Process time = %.1f [sec]\n\n\n", (double)(tend - tstart) / CLOCKS_PER_SEC);
+	if(DEBUG) fprintf(stderr, "Process time = %.1f [sec]\n\n\n", (double)(tend - tstart) / CLOCKS_PER_SEC);
 
 	//return iq_buff;
 	return(0);
