@@ -7,10 +7,12 @@
 // 	MessageBox(0,"Hello World from DLL!\n","Hi",MB_ICONINFORMATION);
 // }
 
-DLLIMPORT int GPS_create_bin(char* param, char* base_path, short * iq_buff);
+//DLLIMPORT int GPS_create_bin(char* param, short * iq_buff);
 DLLIMPORT void llh2xyz(const double* llh, double* xyz);
 DLLIMPORT void xyz2llh(const double* xyz, double* llh);
-// DLLIMPORT gpstime_t incGpsTime(gpstime_t time, double dt);
+DLLIMPORT int read_RINEX_file(char* rinex_file);
+DLLIMPORT int settings(char* param);
+DLLIMPORT int generate_100ms_IQ(short* iq_buff);
 
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
