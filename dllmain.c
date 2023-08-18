@@ -13,6 +13,7 @@ DLLIMPORT void xyz2llh(const double* xyz, double* llh);
 DLLIMPORT int read_RINEX_file(char* rinex_file);
 DLLIMPORT int settings(char* param);
 DLLIMPORT int generate_100ms_IQ(short* iq_buff);
+DLLIMPORT int set_position(double latitude, double longtitude, double height);
 
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)

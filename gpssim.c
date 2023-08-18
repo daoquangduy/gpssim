@@ -2195,6 +2195,16 @@ int settings(char* param) {
 	return 0;
 }
 
+int set_position(double latitude, double longtitude, double height) {
+	llh[0] = latitude;
+	llh[1] = longtitude;
+	llh[2] = height;
+	llh[0] = llh[0] / R2D; // convert to RAD
+	llh[1] = llh[1] / R2D; // convert to RAD
+	llh2xyz(llh, xyz[0]); // Convert llh to xyz
+	return 0;
+}
+
 int generate_100ms_IQ(short* iq_buff) {
 
 	int isamp;
