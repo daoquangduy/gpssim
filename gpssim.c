@@ -1738,7 +1738,7 @@ int read_RINEX_file(char* rinex_file) {
 	return 0;
 }
 
-int DEBUG = FALSE;
+int DEBUG = TRUE;
 
 int sv;
 // #230817 remove RINEX data local variable -> change to global
@@ -1761,7 +1761,7 @@ unsigned long int iumd;
 unsigned long int numd;
 //char umfile[MAX_CHAR];
 
-double xyz[1][3];
+double xyz[3];
 
 int realTimeMode = FALSE;
 int staticLocationMode = FALSE;
@@ -1788,8 +1788,8 @@ gpstime_t gmin, gmax;
 double dt;
 int igrx;
 
-//double duration;
-//unsigned int iduration;
+double duration;
+unsigned int iduration;
 int verb;
 
 
@@ -1829,8 +1829,8 @@ int settings(char* param) {
 	samp_freq = 2.6e6;
 	data_format = SC16;
 	g0.week = -1; // Invalid start time
-//	iduration = USER_MOTION_SIZE;
-//	duration = (double)iduration / 10.0; // Default duration
+	iduration = USER_MOTION_SIZE;
+	duration = (double)iduration / 10.0; // Default duration
 	verb = FALSE;
 	ionoutc.enable = TRUE;
 
@@ -1839,9 +1839,9 @@ int settings(char* param) {
 		return 102;
 	}
 
-	// debug
+
 	reset_getopt();
-	// end debug
+
 	// while ((result=getopt(argc,argv,"e:u:x:g:c:l:o:s:b:T:t:d:iv"))!=-1)
 	while ((result = getopt(nargc, nargv, "e:u:x:g:c:l:o:s:b:T:t:d:ivr")) != -1)
 	{
@@ -1870,7 +1870,7 @@ int settings(char* param) {
 		case 'c':
 			// Static ECEF coordinates input mode
 			staticLocationMode = TRUE;
-			sscanf(optarg, "%lf,%lf,%lf", &xyz[0][0], &xyz[0][1], &xyz[0][2]);
+			sscanf(optarg, "%lf,%lf,%lf", &xyz[0], &xyz[1], &xyz[2]);
 			break;
 		case 'l':
 			// Static geodetic coordinates input mode
@@ -1879,7 +1879,7 @@ int settings(char* param) {
 			sscanf(optarg, "%lf,%lf,%lf", &llh[0], &llh[1], &llh[2]);
 			llh[0] = llh[0] / R2D; // convert to RAD
 			llh[1] = llh[1] / R2D; // convert to RAD
-			llh2xyz(llh, xyz[0]); // Convert llh to xyz
+			llh2xyz(llh, xyz); // Convert llh to xyz
 			break;
 		case 'o':
 			//strcpy(outfile, optarg);
@@ -1935,7 +1935,7 @@ int settings(char* param) {
 			date2gps(&t0, &g0);
 			break;
 		case 'd':
-//			duration = atof(optarg);
+			duration = atof(optarg);
 			break;
 		case 'i':
 			ionoutc.enable = FALSE; // Disable ionospheric correction
@@ -1993,10 +1993,10 @@ int settings(char* param) {
 		// Set simulation duration
 		//numd = iduration;
 		// Set user initial position
-		llh2xyz(llh, xyz[0]);
+		llh2xyz(llh, xyz);
 	}
 	if (DEBUG) {
-		fprintf(stderr, "xyz = %11.1f, %11.1f, %11.1f\n", xyz[0][0], xyz[0][1], xyz[0][2]);
+		fprintf(stderr, "xyz = %11.1f, %11.1f, %11.1f\n", xyz[0], xyz[1], xyz[2]);
 		fprintf(stderr, "llh = %11.6f, %11.6f, %11.1f\n", llh[0] * R2D, llh[1] * R2D, llh[2]);
 	}
 
@@ -2166,7 +2166,7 @@ int settings(char* param) {
 	grx = incGpsTime(g0, 0.0);
 
 	// Allocate visible satellites
-	allocateChannel(chan, eph[ieph], ionoutc, grx, xyz[0], elvmask);
+	allocateChannel(chan, eph[ieph], ionoutc, grx, xyz, elvmask);
 	if (DEBUG) {
 		for (i = 0; i < MAX_CHAN; i++)
 		{
@@ -2195,13 +2195,17 @@ int settings(char* param) {
 	return 0;
 }
 
-int set_position(double latitude, double longtitude, double height) {
-	llh[0] = latitude;
-	llh[1] = longtitude;
-	llh[2] = height;
+//sscanf(optarg, "%lf,%lf,%lf", &llh[0], &llh[1], &llh[2]);
+int set_position(char* position_llh) {
+	//llh[0] = latitude;
+	//llh[1] = longtitude;
+	//llh[2] = height;
+
+	sscanf(position_llh, "%lf,%lf,%lf", &llh[0], &llh[1], &llh[2]);
+	//fprintf(stderr, "lat: %.9f, lon: %.9f, hei: %.9f", llh[0], llh[1], llh[2]);
 	llh[0] = llh[0] / R2D; // convert to RAD
 	llh[1] = llh[1] / R2D; // convert to RAD
-	llh2xyz(llh, xyz[0]); // Convert llh to xyz
+	llh2xyz(llh, xyz); // Convert llh to xyz
 	return 0;
 }
 
@@ -2226,7 +2230,7 @@ int generate_100ms_IQ(short* iq_buff) {
 			//if (!staticLocationMode)
 			//	computeRange(&rho, eph[ieph][sv], &ionoutc, grx, xyz[iumd]);
 			//else
-			computeRange(&rho, eph[ieph][sv], &ionoutc, grx, xyz[0]);
+			computeRange(&rho, eph[ieph][sv], &ionoutc, grx, xyz);
 
 			chan[i].azel[0] = rho.azel[0];
 			chan[i].azel[1] = rho.azel[1];
@@ -2366,8 +2370,10 @@ int generate_100ms_IQ(short* iq_buff) {
 		// Update channel allocation
 
 		// #230817 Only static mode is used 
-
-		allocateChannel(chan, eph[ieph], ionoutc, grx, xyz[0], elvmask);
+		//if (!staticLocationMode)
+		//	allocateChannel(chan, eph[ieph], ionoutc, grx, xyz[iumd], elvmask);
+		//else
+		allocateChannel(chan, eph[ieph], ionoutc, grx, xyz, elvmask);
 
 		// Show details about simulated channels
 		if (verb == TRUE)
@@ -2391,3 +2397,6 @@ int generate_100ms_IQ(short* iq_buff) {
 	//fflush(stdout);
 	return 0;
 }
+
+
+
