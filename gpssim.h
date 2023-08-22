@@ -196,6 +196,7 @@ DLLIMPORT int read_RINEX_file(char* rinex_file);
 DLLIMPORT int settings(char* param);
 DLLIMPORT int generate_100ms_IQ(short* iq_buff);
 DLLIMPORT int set_position(char* position_llh);
+DLLIMPORT int set_position_nmea(char* nmea_str);
 
 // DLLIMPORT gpstime_t incGpsTime(gpstime_t time, double dt);
 #endif

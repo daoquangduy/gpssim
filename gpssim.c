@@ -1435,7 +1435,7 @@ void computeCodePhase(channel_t* chan, range_t rho1, double dt)
 //}
 
 //int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char *filename)
-////int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char* filename)
+//int readNmeaGGA(double xyz[USER_MOTION_SIZE][3], const char* filename)
 //{
 //	FILE* fp;
 //	int numd = 0;
@@ -1738,7 +1738,7 @@ int read_RINEX_file(char* rinex_file) {
 	return 0;
 }
 
-int DEBUG = TRUE;
+int DEBUG = FALSE;
 
 int sv;
 // #230817 remove RINEX data local variable -> change to global
@@ -2202,11 +2202,79 @@ int set_position(char* position_llh) {
 	//llh[2] = height;
 
 	sscanf(position_llh, "%lf,%lf,%lf", &llh[0], &llh[1], &llh[2]);
-	//fprintf(stderr, "lat: %.9f, lon: %.9f, hei: %.9f", llh[0], llh[1], llh[2]);
+	fprintf(stderr, "lat: %.9f, lon: %.9f, hei: %.9f", llh[0], llh[1], llh[2]);
 	llh[0] = llh[0] / R2D; // convert to RAD
 	llh[1] = llh[1] / R2D; // convert to RAD
 	llh2xyz(llh, xyz); // Convert llh to xyz
 	return 0;
+}
+
+int set_position_nmea(char* nmea_str) {
+	int res = 0; // return code, 0 is OK
+
+	char* token;
+	double llh[3], pos[3];
+	char tmp[8];
+	char str[MAX_CHAR];
+
+	strcpy(str, nmea_str);
+
+	token = strtok(str, ",");
+
+	if (strncmp(token + 3, "GGA", 3) == 0)
+	{
+		token = strtok(NULL, ","); // Date and time
+
+		token = strtok(NULL, ","); // Latitude
+		strncpy(tmp, token, 2);
+		tmp[2] = 0;
+
+		llh[0] = atof(tmp) + atof(token + 2) / 60.0;
+
+		token = strtok(NULL, ","); // North or south
+		if (token[0] == 'S')
+			llh[0] *= -1.0;
+
+		llh[0] /= R2D; // in radian
+
+		token = strtok(NULL, ","); // Longitude
+		strncpy(tmp, token, 3);
+		tmp[3] = 0;
+
+		llh[1] = atof(tmp) + atof(token + 3) / 60.0;
+
+		token = strtok(NULL, ","); // East or west
+		if (token[0] == 'W')
+			llh[1] *= -1.0;
+
+		llh[1] /= R2D; // in radian
+
+		token = strtok(NULL, ","); // GPS fix
+		token = strtok(NULL, ","); // Number of satellites
+		token = strtok(NULL, ","); // HDOP
+
+		token = strtok(NULL, ","); // Altitude above meas sea level
+
+		llh[2] = atof(token);
+
+		token = strtok(NULL, ","); // in meter
+
+		token = strtok(NULL, ","); // Geoid height above WGS84 ellipsoid
+
+		llh[2] += atof(token);
+
+		// Convert geodetic position into ECEF coordinates
+		llh2xyz(llh, pos);
+
+		xyz[0] = pos[0];
+		xyz[1] = pos[1];
+		xyz[2] = pos[2];
+	}
+	else {
+		res = 100; // format NG
+	}
+
+	return res;
 }
 
 int generate_100ms_IQ(short* iq_buff) {
